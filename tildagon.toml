@@ -31,7 +31,7 @@ license = "MIT"
 url = "https://www.github.com/rbirkby/TildagonTetris"
 
 # Description of your app.  Maximum 140 characters!
-description = "TildagonTetris"
+description = "Play Tetris on your Tildagon! 🟥🟥🟥🟥"
 
 # Version number of your app.  If you push a commit where this number is
 # increased, we interpret this as a new version being released.
