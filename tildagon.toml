@@ -37,4 +37,4 @@ description = "Play Tetris on your Tildagon! 🟥🟥🟥🟥"
 # increased, we interpret this as a new version being released.
 #
 # Version number must be an integer!
-version = "0.0.3"
+version = "0.0.4"

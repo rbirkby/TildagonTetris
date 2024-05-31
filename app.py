@@ -164,8 +164,9 @@ class TildagonTetris(app.App):
                 self.drop()
 
         if (self.lost):
-            self.notification = Notification("Game Over!")
+            self.notification = Notification("GameOver")
             self.notification.update(delta)
+            self.lost = False
 
     ##################################
     # GAME LOGIC
@@ -323,7 +324,7 @@ class TildagonTetris(app.App):
             self.notification.draw(ctx)
 
     def drawCourt(self, ctx):
-        ctx.rgb(0, 80, 0).rectangle(0, 0, self.nx * self.dx - 1, self.ny * self.dy - 1).fill()
+        ctx.rgba(0, 255, 0, 0.3).rectangle(0, 0, self.nx * self.dx - 1, self.ny * self.dy - 1).fill()
 
         if self.playing:
             self.drawPiece(ctx, self.current['type'], self.current['x'], self.current['y'], self.current['dir'])
@@ -342,11 +343,11 @@ class TildagonTetris(app.App):
 
     def drawScore(self, ctx):
         width = ctx.text_width(str(self.score))
-        ctx.rgb(255,0,0).move_to((0.6 * display_x - width)/2, 203).text(self.score)
+        ctx.rgb(255,0,0).move_to((0.6 * display_x - width)/2, 203).text(str(self.score))
 
     def drawRows(self, ctx):
         width = ctx.text_width(str(self.rows))
-        ctx.rgb(255,0,0).move_to(0.7*display_x - width/2, 100).text(self.rows)
+        ctx.rgb(255,0,0).move_to(0.7*display_x - width/2, 100).text(str(self.rows))
 
     def drawPiece(self, ctx, type, x, y, dir):
         self.eachblock(type, x, y, dir, lambda x, y: self.drawBlock(ctx, x, y, type['color']))
