@@ -5,16 +5,17 @@
 # MIT licenced
 
 import random
-import app
-from app_components import clear_background, Notification
-from events.input import Buttons, BUTTON_TYPES
+
+from app_components import Notification, clear_background
+from app_components.tokens import display_x, display_y
+from events.input import BUTTON_TYPES, Buttons
 from system.eventbus import eventbus
 from system.scheduler.events import RequestForegroundPushEvent
-from app_components.tokens import display_x, display_y
+
+import app
 
 
 class TildagonTetris(app.App):
-
     ###########################################################################
     # base helper methods
     ###########################################################################

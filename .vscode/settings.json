@@ -2,9 +2,12 @@
   "editor.rulers": [80, 120],
   "editor.formatOnSave": true,
   "[python]": {
-    "editor.defaultFormatter": "ms-python.black-formatter"
+    "editor.defaultFormatter": "charliermarsh.ruff"
   },
   "editor.renderWhitespace": "all",
-  "black-formatter.args": ["--line-length", "120"],
-  "python.analysis.extraPaths": ["../../../modules"]
+  "ruff.lineLength": 120,
+  "ruff.lint.select": ["E", "F", "W", "A", "PLC", "PLE", "PLW", "I"],
+  "ruff.lint.ignore": ["E741", "A002", "PLW2901"],
+  "python.analysis.extraPaths": ["../../../modules"],
+  "ruff.nativeServer": true
 }
