@@ -12,6 +12,7 @@ from system.eventbus import eventbus
 from system.scheduler.events import RequestForegroundPushEvent
 from app_components.tokens import display_x, display_y
 
+
 class TildagonTetris(app.App):
 
     ###########################################################################
@@ -19,36 +20,38 @@ class TildagonTetris(app.App):
     ###########################################################################
 
     def random(self, min, max):
-        return (min + (random() * (max - min)))
+        return min + (random() * (max - min))
 
     ################
     # Game constants
     ################
-    DIR = {'UP': 0, 'RIGHT': 1, 'DOWN': 2, 'LEFT': 3, 'MIN': 0, 'MAX': 3}
-    speed = {'start': 0.6, 'decrement': 0.005, 'min': 0.1}
-    nx = 12 # width of tetris court (in blocks)
-    ny = 15 # height of tetris court (in blocks)
-    nu = 3 # width/height of upcoming preview (in blocks)
+    DIR = {"UP": 0, "RIGHT": 1, "DOWN": 2, "LEFT": 3, "MIN": 0, "MAX": 3}
+    speed = {"start": 0.6, "decrement": 0.005, "min": 0.1}
+    nx = 12  # width of tetris court (in blocks)
+    ny = 15  # height of tetris court (in blocks)
+    nu = 3  # width/height of upcoming preview (in blocks)
 
     ###########################################
     # game variables (initialized during reset)
     ###########################################
-    dx = (0.6 * display_x) / nx # pixel size of a single tetris block
+    dx = (0.6 * display_x) / nx  # pixel size of a single tetris block
     dy = (0.75 * display_y) / ny
-    blocks = [] # 2 dimensional array (nx*ny) representing tetris court - either empty block or occupied by a 'piece'
-    actions = [] # queue of user actions (inputs)
-    playing = True # true|false - game is in progress
-    dt = 0 # time since starting this game
-    current = None # the current and next piece
+    blocks = (
+        []
+    )  # 2 dimensional array (nx*ny) representing tetris court - either empty block or occupied by a 'piece'
+    actions = []  # queue of user actions (inputs)
+    playing = True  # true|false - game is in progress
+    dt = 0  # time since starting this game
+    current = None  # the current and next piece
     next_piece = None
-    score = 0 # the current score
-    vscore = 0 # the currently displayed score (it catches up to score in small chunks - like a spinning slot machine)
-    rows = 0 # number of completed rows in the current game
-    step = 0 # how long before current piece drops by 1 row
+    score = 0  # the current score
+    vscore = 0  # the currently displayed score (it catches up to score in small chunks - like a spinning slot machine)
+    rows = 0  # number of completed rows in the current game
+    step = 0  # how long before current piece drops by 1 row
     lost = False
     notification = None
 
-    ########################################################################### 
+    ###########################################################################
     # tetris pieces
     #
     # blocks: each element represents a rotation of the piece (0, 90, 180, 270)
@@ -62,15 +65,43 @@ class TildagonTetris(app.App):
     #                               ------
     #                               0x44C0
     #
-    ########################################################################### 
+    ###########################################################################
 
-    i = {'size': 4, 'blocks': [0x0F00, 0x2222, 0x00F0, 0x4444], 'color': {'r': 0, 'g': 255, 'b': 255}}
-    j = {'size': 3, 'blocks': [0x44C0, 0x8E00, 0x6440, 0x0E20], 'color': {'r': 0, 'g': 0, 'b': 255}}
-    l = {'size': 3, 'blocks': [0x4460, 0x0E80, 0xC440, 0x2E00], 'color': {'r': 255, 'g': 165, 'b': 0}}
-    o = {'size': 2, 'blocks': [0xCC00, 0xCC00, 0xCC00, 0xCC00], 'color': {'r': 255, 'g': 255, 'b': 0}}
-    s = {'size': 3, 'blocks': [0x06C0, 0x8C40, 0x6C00, 0x4620], 'color': {'r': 0, 'g': 255, 'b': 0}}
-    t = {'size': 3, 'blocks': [0x0E40, 0x4C40, 0x4E00, 0x4640], 'color': {'r': 128, 'g': 0, 'b': 128}}
-    z = {'size': 3, 'blocks': [0x0C60, 0x4C80, 0xC600, 0x2640], 'color': {'r': 255, 'g': 0, 'b': 0}}
+    i = {
+        "size": 4,
+        "blocks": [0x0F00, 0x2222, 0x00F0, 0x4444],
+        "color": {"r": 0, "g": 255, "b": 255},
+    }
+    j = {
+        "size": 3,
+        "blocks": [0x44C0, 0x8E00, 0x6440, 0x0E20],
+        "color": {"r": 0, "g": 0, "b": 255},
+    }
+    l = {
+        "size": 3,
+        "blocks": [0x4460, 0x0E80, 0xC440, 0x2E00],
+        "color": {"r": 255, "g": 165, "b": 0},
+    }
+    o = {
+        "size": 2,
+        "blocks": [0xCC00, 0xCC00, 0xCC00, 0xCC00],
+        "color": {"r": 255, "g": 255, "b": 0},
+    }
+    s = {
+        "size": 3,
+        "blocks": [0x06C0, 0x8C40, 0x6C00, 0x4620],
+        "color": {"r": 0, "g": 255, "b": 0},
+    }
+    t = {
+        "size": 3,
+        "blocks": [0x0E40, 0x4C40, 0x4E00, 0x4640],
+        "color": {"r": 128, "g": 0, "b": 128},
+    }
+    z = {
+        "size": 3,
+        "blocks": [0x0C60, 0x4C80, 0xC600, 0x2640],
+        "color": {"r": 255, "g": 0, "b": 0},
+    }
 
     ##################################################
     # do the bit manipulation and iterate through each
@@ -78,7 +109,7 @@ class TildagonTetris(app.App):
     ##################################################
 
     def eachblock(self, type, x, y, dir, fn):
-        blocks = type['blocks'][dir]
+        blocks = type["blocks"][dir]
         bit = 0x8000
         row = 0
         col = 0
@@ -99,15 +130,21 @@ class TildagonTetris(app.App):
         result = False
 
         def isOccupied(x, y):
-            if ((x < 0) or (x >= self.nx) or (y < 0) or (y >= self.ny) or self.getBlock(x, y)): 
-                nonlocal result; result = True
+            if (
+                (x < 0)
+                or (x >= self.nx)
+                or (y < 0)
+                or (y >= self.ny)
+                or self.getBlock(x, y)
+            ):
+                nonlocal result
+                result = True
 
         self.eachblock(type, x, y, dir, isOccupied)
         return result
-    
+
     def unoccupied(self, type, x, y, dir):
         return not self.occupied(type, x, y, dir)
-
 
     ##########################################
     # start with 4 instances of each piece and
@@ -115,9 +152,43 @@ class TildagonTetris(app.App):
     ##########################################
 
     def randomPiece(self):
-        pieces = [self.i, self.i, self.i, self.i, self.j, self.j, self.j, self.j, self.l, self.l, self.l, self.l, self.o, self.o, self.o, self.o, self.s, self.s, self.s, self.s, self.t, self.t, self.t, self.t, self.z, self.z, self.z, self.z]
+        pieces = [
+            self.i,
+            self.i,
+            self.i,
+            self.i,
+            self.j,
+            self.j,
+            self.j,
+            self.j,
+            self.l,
+            self.l,
+            self.l,
+            self.l,
+            self.o,
+            self.o,
+            self.o,
+            self.o,
+            self.s,
+            self.s,
+            self.s,
+            self.s,
+            self.t,
+            self.t,
+            self.t,
+            self.t,
+            self.z,
+            self.z,
+            self.z,
+            self.z,
+        ]
         piece = random.choice(pieces)
-        return {'type': piece, 'dir': self.DIR['UP'], 'x': random.randint(0, self.nx - piece['size']), 'y': 0}
+        return {
+            "type": piece,
+            "dir": self.DIR["UP"],
+            "x": random.randint(0, self.nx - piece["size"]),
+            "y": 0,
+        }
 
     ##################################
     # GAME LOOP
@@ -125,16 +196,16 @@ class TildagonTetris(app.App):
 
     def __init__(self):
         # Need to call to access overlays
-        super().__init__()        
-        
+        super().__init__()
+
         eventbus.on(RequestForegroundPushEvent, self.handle_foregroundpush, self)
         self.button_states = Buttons(self)
-        self.reset() # reset the per-game variables
+        self.reset()  # reset the per-game variables
         self.play()
 
     def handle_foregroundpush(self, event: RequestForegroundPushEvent):
         if event.app == self:
-            self.reset() # reset the per-game variables
+            self.reset()  # reset the per-game variables
             self.play()
 
     def update(self, delta):
@@ -163,7 +234,7 @@ class TildagonTetris(app.App):
                 self.dt -= self.step
                 self.drop()
 
-        if (self.lost):
+        if self.lost:
             self.notification = Notification("GameOver")
             self.notification.update(delta)
             self.lost = False
@@ -239,49 +310,66 @@ class TildagonTetris(app.App):
         self.notification = None
 
     def handle(self, action):
-        if action == self.DIR['LEFT']:
-            self.move(self.DIR['LEFT'])
-        elif action == self.DIR['RIGHT']:
-            self.move(self.DIR['RIGHT'])
-        elif action == self.DIR['UP']:
+        if action == self.DIR["LEFT"]:
+            self.move(self.DIR["LEFT"])
+        elif action == self.DIR["RIGHT"]:
+            self.move(self.DIR["RIGHT"])
+        elif action == self.DIR["UP"]:
             self.rotate()
-        elif action == self.DIR['DOWN']:
+        elif action == self.DIR["DOWN"]:
             self.drop()
 
     def move(self, dir):
-        x = self.current['x']
-        y = self.current['y']
-        if dir == self.DIR['RIGHT']:
+        x = self.current["x"]
+        y = self.current["y"]
+        if dir == self.DIR["RIGHT"]:
             x += 1
-        elif dir == self.DIR['LEFT']:
+        elif dir == self.DIR["LEFT"]:
             x -= 1
-        elif dir == self.DIR['DOWN']:
+        elif dir == self.DIR["DOWN"]:
             y += 1
-        if self.unoccupied(self.current['type'], x, y, self.current['dir']):
-            self.current['x'] = x
-            self.current['y'] = y
+        if self.unoccupied(self.current["type"], x, y, self.current["dir"]):
+            self.current["x"] = x
+            self.current["y"] = y
             return True
-        
+
         return False
 
     def rotate(self):
-        newdir = self.DIR['MIN'] if self.current['dir'] == self.DIR['MAX'] else self.current['dir'] + 1
-        if self.unoccupied(self.current['type'], self.current['x'], self.current['y'], newdir):
-            self.current['dir'] = newdir
+        newdir = (
+            self.DIR["MIN"]
+            if self.current["dir"] == self.DIR["MAX"]
+            else self.current["dir"] + 1
+        )
+        if self.unoccupied(
+            self.current["type"], self.current["x"], self.current["y"], newdir
+        ):
+            self.current["dir"] = newdir
 
     def drop(self):
-        if not self.move(self.DIR['DOWN']):
+        if not self.move(self.DIR["DOWN"]):
             self.addScore(10)
             self.dropPiece()
             self.removeLines()
             self.setCurrentPiece(self.next_piece)
             self.setNextPiece(self.randomPiece())
             self.clearActions()
-            if self.occupied(self.current['type'], self.current['x'], self.current['y'], self.current['dir']):
+            if self.occupied(
+                self.current["type"],
+                self.current["x"],
+                self.current["y"],
+                self.current["dir"],
+            ):
                 self.lose()
 
     def dropPiece(self):
-        self.eachblock(self.current['type'], self.current['x'], self.current['y'], self.current['dir'], lambda x, y: self.setBlock(x, y, self.current['type']))
+        self.eachblock(
+            self.current["type"],
+            self.current["x"],
+            self.current["y"],
+            self.current["dir"],
+            lambda x, y: self.setBlock(x, y, self.current["type"]),
+        )
 
     def removeLines(self):
         n = 0
@@ -311,7 +399,7 @@ class TildagonTetris(app.App):
     def draw(self, ctx):
         clear_background(ctx)
         ctx.save()
-        ctx.translate(-(0.6*display_x)/2, -(0.75*display_y)/2)
+        ctx.translate(-(0.6 * display_x) / 2, -(0.75 * display_y) / 2)
 
         self.drawCourt(ctx)
         self.drawNext(ctx)
@@ -324,36 +412,59 @@ class TildagonTetris(app.App):
             self.notification.draw(ctx)
 
     def drawCourt(self, ctx):
-        ctx.rgba(0, 255, 0, 0.3).rectangle(0, 0, self.nx * self.dx - 1, self.ny * self.dy - 1).fill()
+        ctx.rgba(0, 255, 0, 0.3).rectangle(
+            0, 0, self.nx * self.dx - 1, self.ny * self.dy - 1
+        ).fill()
 
         if self.playing:
-            self.drawPiece(ctx, self.current['type'], self.current['x'], self.current['y'], self.current['dir'])
+            self.drawPiece(
+                ctx,
+                self.current["type"],
+                self.current["x"],
+                self.current["y"],
+                self.current["dir"],
+            )
         for y in range(self.ny):
             for x in range(self.nx):
                 block = self.getBlock(x, y)
                 if block:
-                    self.drawBlock(ctx, x, y, block['color'])
+                    self.drawBlock(ctx, x, y, block["color"])
 
-        ctx.rgb(0, 255, 0).rectangle(0, 0, self.nx * self.dx - 1, self.ny * self.dy - 1).stroke()
+        ctx.rgb(0, 255, 0).rectangle(
+            0, 0, self.nx * self.dx - 1, self.ny * self.dy - 1
+        ).stroke()
 
     def drawNext(self, ctx):
-        direction = self.DIR['RIGHT'] if self.next_piece['type'] in (self.z, self.i, self.s, self.z, self.t) else self.DIR['UP']
-        offset = -4 if self.next_piece['type'] in (self.i, self.l) else -3
-        self.drawPiece(ctx, self.next_piece['type'], offset, 6, direction)
+        direction = (
+            self.DIR["RIGHT"]
+            if self.next_piece["type"] in (self.z, self.i, self.s, self.z, self.t)
+            else self.DIR["UP"]
+        )
+        offset = -4 if self.next_piece["type"] in (self.i, self.l) else -3
+        self.drawPiece(ctx, self.next_piece["type"], offset, 6, direction)
 
     def drawScore(self, ctx):
         width = ctx.text_width(str(self.score))
-        ctx.rgb(255,0,0).move_to((0.6 * display_x - width)/2, 203).text(str(self.score))
+        ctx.rgb(255, 0, 0).move_to((0.6 * display_x - width) / 2, 203).text(
+            str(self.score)
+        )
 
     def drawRows(self, ctx):
         width = ctx.text_width(str(self.rows))
-        ctx.rgb(255,0,0).move_to(0.7*display_x - width/2, 100).text(str(self.rows))
+        ctx.rgb(255, 0, 0).move_to(0.7 * display_x - width / 2, 100).text(
+            str(self.rows)
+        )
 
     def drawPiece(self, ctx, type, x, y, dir):
-        self.eachblock(type, x, y, dir, lambda x, y: self.drawBlock(ctx, x, y, type['color']))
+        self.eachblock(
+            type, x, y, dir, lambda x, y: self.drawBlock(ctx, x, y, type["color"])
+        )
 
     def drawBlock(self, ctx, x, y, color):
-        ctx.rgb(color['r'], color['g'], color['b']).rectangle(x * self.dx, y * self.dy, self.dx, self.dy).fill()
-        ctx.rgb(0,0,0).rectangle(x * self.dx, y * self.dy, self.dx, self.dy).stroke()
+        ctx.rgb(color["r"], color["g"], color["b"]).rectangle(
+            x * self.dx, y * self.dy, self.dx, self.dy
+        ).fill()
+        ctx.rgb(0, 0, 0).rectangle(x * self.dx, y * self.dy, self.dx, self.dy).stroke()
+
 
 __app_export__ = TildagonTetris
